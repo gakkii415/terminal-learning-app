@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.npm-cache/
+.npmrc
+.DS_Store
+coverage/
+/audit/
+/design-reference.png
+/design-qa.md
