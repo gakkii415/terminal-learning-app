@@ -31,7 +31,7 @@ function LessonSidebar({ progress, onLessonSelect }) {
     <aside className="lesson-sidebar" aria-label="基礎レッスン">
       <div className="brand-block">
         <div className="brand-icon"><TerminalWindow size={24} weight="bold" /></div>
-        <div><h1>はじめてのターミナル</h1><p>全{LESSONS.length}レッスン</p></div>
+        <div><h1>はじめてのターミナル</h1><p>レッスン {progress.viewedLesson + 1}/{LESSONS.length}</p></div>
       </div>
       <div className="mobile-progress-title">基礎レッスン <strong>{progress.viewedLesson + 1}/{LESSONS.length}</strong></div>
       <nav className="lesson-list">
@@ -46,6 +46,7 @@ function LessonSidebar({ progress, onLessonSelect }) {
               disabled={locked}
               onClick={() => !locked && onLessonSelect(index)}
               aria-current={active ? "step" : undefined}
+              aria-label={`${index + 1}. ${lesson.title}（${lesson.command}）${done ? " 完了" : locked ? " 未解放" : ""}`}
             >
               <span className="lesson-number">{done ? <Check size={15} weight="bold" /> : index + 1}</span>
               <span><strong>{lesson.title}（{lesson.command}）</strong>{active && <small>{lesson.task}</small>}</span>
@@ -95,14 +96,17 @@ function Terminal({ entries, input, setInput, onSubmit, onReset }) {
 
   return (
     <section className="terminal" onClick={() => inputRef.current?.focus()} aria-label="疑似ターミナル">
-      <header><span><TerminalWindow size={21} weight="bold" /> ターミナル（シミュレーション）</span><button onClick={(event) => { event.stopPropagation(); onReset(); }}><Trash size={17} /> 履歴を消去</button></header>
+      <header><span><TerminalWindow size={21} weight="bold" /><span className="terminal-title">練習ターミナル</span><small>安全なシミュレーション</small></span><button aria-label="ターミナルの履歴を消去" onClick={(event) => { event.stopPropagation(); onReset(); }}><Trash size={17} /><span className="clear-label">履歴を消去</span></button></header>
       <div className="terminal-body">
-        {entries.map((entry, index) => (
-          <div className={`terminal-entry ${entry.ok ? "" : "error"}`} key={`${entry.input}-${index}`}>
-            <div className="terminal-command"><span>$</span> <strong>{entry.input}</strong></div>
-            {entry.lines.map((line, lineIndex) => <div className="terminal-output" key={lineIndex}>{line}</div>)}
-          </div>
-        ))}
+        <div className="terminal-log">
+          {entries.map((entry, index) => (
+            <div className={`terminal-entry ${entry.ok ? "" : "error"}`} key={`${entry.input}-${index}`}>
+              <div className="terminal-command"><span>$</span> <strong>{entry.input}</strong></div>
+              {entry.lines.map((line, lineIndex) => <div className="terminal-output" key={lineIndex}>{line}</div>)}
+            </div>
+          ))}
+          <div ref={bottomRef} />
+        </div>
         <form onSubmit={onSubmit} className="command-line">
           <label htmlFor="terminal-input">$</label>
           <input
@@ -110,6 +114,7 @@ function Terminal({ entries, input, setInput, onSubmit, onReset }) {
             id="terminal-input"
             value={input}
             onChange={(event) => setInput(event.target.value)}
+            placeholder="ここにコマンドを入力"
             autoComplete="off"
             autoCapitalize="off"
             spellCheck="false"
@@ -126,7 +131,6 @@ function Terminal({ entries, input, setInput, onSubmit, onReset }) {
             実行
           </button>
         </form>
-        <div ref={bottomRef} />
       </div>
       <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
         {latestEntry ? `${latestEntry.ok ? "実行結果" : "エラー"}: ${latestEntry.lines.join(" ")}` : ""}
@@ -254,8 +258,10 @@ export function App() {
       <LessonSidebar progress={progress} onLessonSelect={selectLesson} />
       <section className="lesson-workspace">
         <header className="lesson-header">
-          <div><span>{freeMode ? "安全な練習場" : basicsComplete ? "基礎コース修了" : `レッスン ${progress.viewedLesson + 1}/${LESSONS.length}`}</span><h2>{statusTitle}</h2><p>{freeMode ? "習ったコマンドを自由に組み合わせて試せます。" : basicsComplete ? "好きな進路を選ぶか、自由練習を続けましょう。" : activeLesson.description}</p></div>
-          <div className="header-actions"><button className="ghost-button" onClick={toggleFreeMode}>{freeMode ? "レッスンに戻る" : "自由練習"}</button><button className="reset-all" onClick={resetAll}>進捗をリセット</button></div>
+          <div className="lesson-copy">
+            <div className="lesson-meta-row"><span>{freeMode ? "安全な練習場" : basicsComplete ? "基礎コース修了" : `レッスン ${progress.viewedLesson + 1}/${LESSONS.length}`}</span><div className="header-actions"><button className="ghost-button" onClick={toggleFreeMode}><Code size={17} weight="bold" />{freeMode ? "レッスンに戻る" : "自由練習"}</button><button className="reset-all" aria-label="進捗をリセット" onClick={resetAll}><Trash size={17} /><span className="action-label">進捗をリセット</span></button></div></div>
+            <h2>{statusTitle}</h2><p>{freeMode ? "習ったコマンドを自由に組み合わせて試せます。" : basicsComplete ? "好きな進路を選ぶか、自由練習を続けましょう。" : activeLesson.description}</p>
+          </div>
         </header>
 
         {!freeMode && !basicsComplete && <div className="task-banner"><CircleNotch size={20} weight="bold" /><div><strong>今回の課題</strong><span>{activeLesson.task}</span></div></div>}
